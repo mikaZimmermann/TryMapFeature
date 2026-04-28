@@ -104,8 +104,8 @@ export default function MapEventsClient() {
   useEffect(() => {
     let leafletMap;
 
-    async function mountLeafletMap() {
-      if (!providerStatus.isLeaflet || !mapContainerRef.current) {
+    async function mountTileMap() {
+      if (!mapContainerRef.current || !providerStatus.tileUrl || !providerStatus.hasRequiredCredentials) {
         return;
       }
 
@@ -123,23 +123,26 @@ export default function MapEventsClient() {
       leaflet
         .tileLayer(providerStatus.tileUrl, {
           maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors'
+          attribution: providerStatus.tileAttribution
         })
         .addTo(leafletMap);
 
       eventsToRender.forEach((event) => {
-        if (typeof event.lat !== 'number' || typeof event.lng !== 'number') {
+        const lat = Number(event.lat);
+        const lng = Number(event.lng);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
           return;
         }
 
         leaflet
-          .marker([event.lat, event.lng])
+          .marker([lat, lng])
           .addTo(leafletMap)
           .bindPopup(event.title || 'Untitled event');
       });
     }
 
-    mountLeafletMap();
+    mountTileMap();
 
     return () => {
       if (leafletMap) {
@@ -156,15 +159,15 @@ export default function MapEventsClient() {
           Provider: <strong>{providerStatus.provider}</strong>
         </p>
 
-        {providerStatus.isLeaflet ? (
+        {providerStatus.hasRequiredCredentials ? (
           <div className="map-canvas-wrapper">
             <div ref={mapContainerRef} className="map-canvas" />
-            <p className="map-note">Tiles: OpenStreetMap standard layer</p>
+            <p className="map-note">Tile provider: {providerStatus.provider}</p>
           </div>
         ) : (
           <div className="map-placeholder">
-            <p>{providerStatus.provider} adapter not implemented yet.</p>
-            <p>Switch `NEXT_PUBLIC_MAP_PROVIDER=leaflet` to use the v1 map path.</p>
+            <p>{providerStatus.provider} is selected but missing required credentials.</p>
+            <p>Set `NEXT_PUBLIC_MAP_API_KEY` to render tiles.</p>
           </div>
         )}
 

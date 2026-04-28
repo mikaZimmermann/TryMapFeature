@@ -29,18 +29,19 @@ cp frontend/.env.example frontend/.env.local
 
 Variables:
 
-- `NEXT_PUBLIC_MAP_PROVIDER` — `leaflet`, `mapbox`, `google`, etc.
-- `NEXT_PUBLIC_MAP_API_KEY` — required for API-key providers (for example Mapbox/Google); optional for Leaflet.
-- `NEXT_PUBLIC_MAP_TILE_URL` — optional tile URL override. With `leaflet`, defaults to `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`.
+- `NEXT_PUBLIC_MAP_PROVIDER` — `mapbox` (default) or `osm`.
+- `NEXT_PUBLIC_MAP_API_KEY` — required for `mapbox`; optional for `osm`.
+- `NEXT_PUBLIC_MAP_STYLE_ID` — optional mapbox style (defaults to `mapbox/streets-v12`).
+- `NEXT_PUBLIC_MAP_TILE_URL` — optional tile URL override for custom/self-hosted tiles.
 
 
-## Leaflet + OpenStreetMap tile guidance
+## Tile provider guidance
 
-When `NEXT_PUBLIC_MAP_PROVIDER=leaflet`, the frontend uses Leaflet with OSM standard tiles by default.
+The v1 frontend is now committed to **Mapbox** as the primary tile provider.
 
-- **Attribution is required**: keep `© OpenStreetMap contributors` visible in the map UI.
-- **Usage limits apply**: the public tile server is community-operated and intended for reasonable, non-abusive usage.
-- **Production recommendation**: for high traffic or strict SLA needs, use your own tile infrastructure or a commercial tile provider and override `NEXT_PUBLIC_MAP_TILE_URL`.
+- **Attribution is required**: Mapbox and OpenStreetMap attribution must remain visible.
+- **Usage and billing limits apply**: monitor tile usage against your Mapbox plan.
+- **Fallback option**: set `NEXT_PUBLIC_MAP_PROVIDER=osm` only for low-traffic/testing scenarios if you need a no-key provider.
 
 ## Run locally
 
