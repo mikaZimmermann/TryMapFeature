@@ -8,6 +8,7 @@ import EventStore from './services/eventStore.js';
 
 const app = express();
 const syncIntervalMs = Number(process.env.EVENT_SYNC_INTERVAL_MS || 5 * 60 * 1000);
+const germanyCompetitionCode = process.env.FOOTBALL_GERMANY_COMPETITION_CODE || 'BL1';
 
 const primaryProvider = new FootballDataProvider();
 const fallbackProvider = new OpenLigaProvider();
@@ -172,6 +173,40 @@ app.get('/api/v1/events/champions-league/today', async (req, res) => {
   } catch (error) {
     res.status(502).json({
       error: 'Failed to ingest Champions League events',
+      details: error.message
+    });
+  }
+});
+
+app.get('/api/v1/events/germany/today', async (req, res) => {
+  try {
+    const force = req.query.forceRefresh !== 'false';
+    const todayUtc = new Date().toISOString().slice(0, 10);
+
+    const syncStatus = await ensureEvents({
+      force,
+      dateFrom: todayUtc,
+      dateTo: todayUtc,
+      competitionCode: germanyCompetitionCode
+    });
+
+    res.json({
+      data: filterEvents({
+        dateFrom: todayUtc,
+        dateTo: todayUtc,
+        competitionCode: germanyCompetitionCode
+      }),
+      sync: syncStatus,
+      lastIngestedAt: eventStore.getLastIngestedAt(),
+      filters: {
+        dateFrom: todayUtc,
+        dateTo: todayUtc,
+        competitionCode: germanyCompetitionCode
+      }
+    });
+  } catch (error) {
+    res.status(502).json({
+      error: 'Failed to ingest Germany events',
       details: error.message
     });
   }

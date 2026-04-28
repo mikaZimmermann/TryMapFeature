@@ -12,6 +12,7 @@ const sampleEvents = [
 ];
 
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+const germanyCompetitionCode = process.env.NEXT_PUBLIC_GERMANY_COMPETITION_CODE || 'BL1';
 
 function parseBoolean(value) {
   if (!value) return false;
@@ -63,6 +64,18 @@ export default function MapEventsClient() {
   const endpoint = useMemo(() => {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    const region = searchParams.get('region');
+
+    if (region === 'germany' && !dateFrom && !dateTo) {
+      const params = new URLSearchParams(queryString);
+      if (!params.has('competitionCode')) {
+        params.set('competitionCode', germanyCompetitionCode);
+      }
+
+      return `${apiBaseUrl}/api/v1/events/germany/today${
+        params.toString() ? `?${params.toString()}` : ''
+      }`;
+    }
 
     if (dateFrom || dateTo) {
       const baseParams = new URLSearchParams(queryString);
@@ -217,6 +230,7 @@ export default function MapEventsClient() {
 
         {providerStatus.hasRequiredCredentials ? (
           <div className="map-canvas-wrapper">
+            <div className="map-overlay">Germany today ({germanyCompetitionCode})</div>
             <div ref={mapContainerRef} className="map-canvas" />
             <p className="map-note">Tile provider: {providerStatus.provider}</p>
             {!geoLoading && geoError && (
