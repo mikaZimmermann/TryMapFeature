@@ -7,12 +7,15 @@ class FootballDataProvider {
     this.baseUrl = baseUrl;
   }
 
-  async fetchEvents({ dateFrom, dateTo } = {}) {
+  async fetchEvents({ dateFrom, dateTo, competitionCode } = {}) {
     if (!this.apiKey) {
       throw new Error('FOOTBALL_DATA_API_KEY is not configured');
     }
 
-    const url = new URL('/matches', this.baseUrl);
+    const endpoint = competitionCode
+      ? `/competitions/${competitionCode}/matches`
+      : '/matches';
+    const url = new URL(endpoint, this.baseUrl);
 
     if (dateFrom) {
       url.searchParams.set('dateFrom', dateFrom);
