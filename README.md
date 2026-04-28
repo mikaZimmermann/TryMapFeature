@@ -40,6 +40,7 @@ Variables:
 
 - `FOOTBALL_DATA_API_KEY` — required to use the football-data.org primary provider.
 - `EVENT_SYNC_INTERVAL_MS` — optional cache/sync window in milliseconds (defaults to `300000`).
+- `FOOTBALL_GERMANY_COMPETITION_CODE` — optional football-data competition code for Germany endpoint (defaults to `BL1`).
 
 When deploying on Vercel, set both values in your project environment variables (`Settings -> Environment Variables`).
 
@@ -88,5 +89,5 @@ After deployment, these endpoints are still available:
 
 - `/health`
 - `/api/v1/events`
+- `/api/v1/events/germany/today`
 - `/api/v1/providers/health`
-

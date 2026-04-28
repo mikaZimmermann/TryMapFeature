@@ -58,10 +58,23 @@ main {
 }
 
 .map-canvas-wrapper {
+  position: relative;
   border: 1px solid #94a3b8;
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
+}
+
+.map-overlay {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 500;
+  background: rgba(15, 23, 42, 0.88);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
 }
 
 .map-canvas {
