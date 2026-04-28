@@ -56,3 +56,23 @@ main {
   padding: 2rem;
   background: #e2e8f0;
 }
+
+.map-canvas-wrapper {
+  border: 1px solid #94a3b8;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.map-canvas {
+  height: 380px;
+  width: 100%;
+}
+
+.map-note {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #475569;
+  background: #f8fafc;
+}

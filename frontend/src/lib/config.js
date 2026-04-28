@@ -1,15 +1,18 @@
-const requiredVars = ['NEXT_PUBLIC_MAP_PROVIDER', 'NEXT_PUBLIC_MAP_API_KEY'];
+import { LEAFLET_PROVIDER, resolveMapProviderConfig } from 'lib/map-provider-adapter';
 
-requiredVars.forEach((varName) => {
-  if (!process.env[varName]) {
-    console.warn(`[config] Missing ${varName}. Map integrations may not render correctly.`);
-  }
-});
+const provider = (process.env.NEXT_PUBLIC_MAP_PROVIDER || LEAFLET_PROVIDER).toLowerCase();
+const requiresApiKey = provider !== LEAFLET_PROVIDER;
 
-export const mapConfig = {
-  provider: process.env.NEXT_PUBLIC_MAP_PROVIDER || 'mapbox',
+if (!process.env.NEXT_PUBLIC_MAP_PROVIDER) {
+  console.warn('[config] Missing NEXT_PUBLIC_MAP_PROVIDER. Defaulting to leaflet.');
+}
+
+if (requiresApiKey && !process.env.NEXT_PUBLIC_MAP_API_KEY) {
+  console.warn('[config] Missing NEXT_PUBLIC_MAP_API_KEY. This provider requires an API key.');
+}
+
+export const mapConfig = resolveMapProviderConfig({
+  provider,
   apiKey: process.env.NEXT_PUBLIC_MAP_API_KEY || '',
-  tileUrl:
-    process.env.NEXT_PUBLIC_MAP_TILE_URL ||
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-};
+  tileUrl: process.env.NEXT_PUBLIC_MAP_TILE_URL || ''
+});

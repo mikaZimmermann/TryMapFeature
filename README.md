@@ -27,11 +27,20 @@ Use either `.env.example` at repo root or `frontend/.env.example` as your templa
 cp frontend/.env.example frontend/.env.local
 ```
 
-Required variables:
+Variables:
 
-- `NEXT_PUBLIC_MAP_PROVIDER` — `mapbox`, `google`, `leaflet`, etc.
-- `NEXT_PUBLIC_MAP_API_KEY` — provider key/token.
-- `NEXT_PUBLIC_MAP_TILE_URL` — optional tile URL for leaflet/openstreetmap.
+- `NEXT_PUBLIC_MAP_PROVIDER` — `leaflet`, `mapbox`, `google`, etc.
+- `NEXT_PUBLIC_MAP_API_KEY` — required for API-key providers (for example Mapbox/Google); optional for Leaflet.
+- `NEXT_PUBLIC_MAP_TILE_URL` — optional tile URL override. With `leaflet`, defaults to `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`.
+
+
+## Leaflet + OpenStreetMap tile guidance
+
+When `NEXT_PUBLIC_MAP_PROVIDER=leaflet`, the frontend uses Leaflet with OSM standard tiles by default.
+
+- **Attribution is required**: keep `© OpenStreetMap contributors` visible in the map UI.
+- **Usage limits apply**: the public tile server is community-operated and intended for reasonable, non-abusive usage.
+- **Production recommendation**: for high traffic or strict SLA needs, use your own tile infrastructure or a commercial tile provider and override `NEXT_PUBLIC_MAP_TILE_URL`.
 
 ## Run locally
 

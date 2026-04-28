@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import BaseLayout from 'components/BaseLayout';
 import { mapConfig } from 'lib/config';
+import { getMapProviderStatus } from 'lib/map-provider-adapter';
 
 const sampleEvents = [
   { id: 1, title: 'Downtown Night Market', lat: 37.7866, lng: -122.4041 },
@@ -17,12 +18,31 @@ function parseBoolean(value) {
   return value === '1' || value.toLowerCase() === 'true';
 }
 
+function centerFromEvents(events) {
+  if (!events.length) {
+    return [37.7866, -122.4041];
+  }
+
+  const totals = events.reduce(
+    (acc, event) => ({
+      lat: acc.lat + Number(event.lat),
+      lng: acc.lng + Number(event.lng)
+    }),
+    { lat: 0, lng: 0 }
+  );
+
+  return [totals.lat / events.length, totals.lng / events.length];
+}
+
 export default function MapEventsClient() {
   const searchParams = useSearchParams();
+  const mapContainerRef = useRef(null);
   const [events, setEvents] = useState([]);
   const [syncMetadata, setSyncMetadata] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const providerStatus = useMemo(() => getMapProviderStatus(mapConfig), []);
 
   const queryString = useMemo(() => {
     const nextQuery = new URLSearchParams();
@@ -81,20 +101,79 @@ export default function MapEventsClient() {
 
   const eventsToRender = events.length > 0 ? events : sampleEvents;
 
+  useEffect(() => {
+    let leafletMap;
+
+    async function mountLeafletMap() {
+      if (!providerStatus.isLeaflet || !mapContainerRef.current) {
+        return;
+      }
+
+      const leaflet = await import('leaflet');
+      await import('leaflet/dist/leaflet.css');
+
+      const center = centerFromEvents(eventsToRender);
+
+      leafletMap = leaflet.map(mapContainerRef.current, {
+        center,
+        zoom: 13,
+        scrollWheelZoom: false
+      });
+
+      leaflet
+        .tileLayer(providerStatus.tileUrl, {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        })
+        .addTo(leafletMap);
+
+      eventsToRender.forEach((event) => {
+        if (typeof event.lat !== 'number' || typeof event.lng !== 'number') {
+          return;
+        }
+
+        leaflet
+          .marker([event.lat, event.lng])
+          .addTo(leafletMap)
+          .bindPopup(event.title || 'Untitled event');
+      });
+    }
+
+    mountLeafletMap();
+
+    return () => {
+      if (leafletMap) {
+        leafletMap.remove();
+      }
+    };
+  }, [eventsToRender, providerStatus]);
+
   return (
     <BaseLayout>
       <section>
         <h1>Map Events</h1>
         <p>
-          Provider: <strong>{mapConfig.provider}</strong>
+          Provider: <strong>{providerStatus.provider}</strong>
         </p>
 
-        <div className="map-placeholder">
-          <p>Map container placeholder (wire your map SDK here).</p>
-          <p>
-            API key status: <strong>{mapConfig.apiKey ? 'Configured' : 'Missing'}</strong>
-          </p>
-        </div>
+        {providerStatus.isLeaflet ? (
+          <div className="map-canvas-wrapper">
+            <div ref={mapContainerRef} className="map-canvas" />
+            <p className="map-note">Tiles: OpenStreetMap standard layer</p>
+          </div>
+        ) : (
+          <div className="map-placeholder">
+            <p>{providerStatus.provider} adapter not implemented yet.</p>
+            <p>Switch `NEXT_PUBLIC_MAP_PROVIDER=leaflet` to use the v1 map path.</p>
+          </div>
+        )}
+
+        <p>
+          API key status: <strong>{providerStatus.credentialMessage}</strong>
+        </p>
+        {!providerStatus.hasRequiredCredentials && (
+          <p role="alert">This provider requires `NEXT_PUBLIC_MAP_API_KEY`.</p>
+        )}
 
         <h2>Event feed</h2>
         {isLoading && <p>Loading events…</p>}
