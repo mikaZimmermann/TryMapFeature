@@ -1,0 +1,58 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.brand {
+  font-weight: 700;
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+}
+
+nav a {
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+nav a.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.map-placeholder {
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+  padding: 2rem;
+  background: #e2e8f0;
+}
