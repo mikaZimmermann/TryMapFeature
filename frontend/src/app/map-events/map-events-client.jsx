@@ -47,6 +47,22 @@ function centerFromEvents(events) {
   return [totals.lat / events.length, totals.lng / events.length];
 }
 
+function formatEventDate(isoDateTime) {
+  if (!isoDateTime) return 'TBD';
+  const parsed = new Date(isoDateTime);
+  if (Number.isNaN(parsed.getTime())) return isoDateTime;
+
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short'
+  }).format(parsed);
+}
+
 export default function MapEventsClient() {
   const searchParams = useSearchParams();
   const mapContainerRef = useRef(null);
@@ -59,6 +75,7 @@ export default function MapEventsClient() {
   const [geoLoading, setGeoLoading] = useState(true);
 
   const providerStatus = useMemo(() => getMapProviderStatus(mapConfig), []);
+  const upcomingWeek = useMemo(() => getUpcomingWeekDateRange(), []);
 
   const queryString = useMemo(() => {
     const nextQuery = new URLSearchParams();
@@ -97,7 +114,6 @@ export default function MapEventsClient() {
       return `${apiBaseUrl}/api/v1/events${baseParams.toString() ? `?${baseParams.toString()}` : ''}`;
     }
 
-    const upcomingWeek = getUpcomingWeekDateRange();
     const upcomingWeekParams = new URLSearchParams(queryString);
     upcomingWeekParams.set('dateFrom', upcomingWeek.dateFrom);
     upcomingWeekParams.set('dateTo', upcomingWeek.dateTo);
@@ -105,7 +121,7 @@ export default function MapEventsClient() {
     return `${apiBaseUrl}/api/v1/events${
       upcomingWeekParams.toString() ? `?${upcomingWeekParams.toString()}` : ''
     }`;
-  }, [queryString, searchParams]);
+  }, [queryString, searchParams, upcomingWeek]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -269,7 +285,10 @@ export default function MapEventsClient() {
           <p role="alert">This provider requires `NEXT_PUBLIC_MAP_API_KEY`.</p>
         )}
 
-        <h2>Event feed</h2>
+        <h2>Upcoming Week Events</h2>
+        <p>
+          Date range: <strong>{upcomingWeek.dateFrom}</strong> to <strong>{upcomingWeek.dateTo}</strong>
+        </p>
         {isLoading && <p>Loading events…</p>}
         {!isLoading && error && <p role="alert">Could not fetch events: {error}</p>}
         {!isLoading && !error && events.length === 0 && (
@@ -287,11 +306,19 @@ export default function MapEventsClient() {
             const eventKey = event.id || `${event.title || 'event'}-${index}`;
             const displayLabel = event.title
               ? event.title
-              : `${event.homeTeam || 'Home'} vs ${event.awayTeam || 'Away'} • ${event.competition || 'Unknown competition'}${
-                  event.startTimeUtc ? ` • ${event.startTimeUtc}` : ''
-                }`;
+              : `${event.homeTeam || 'Home'} vs ${event.awayTeam || 'Away'}`;
             return (
-              <li key={eventKey}>{displayLabel} ({event.lat}, {event.lng})</li>
+              <li key={eventKey}>
+                <strong>{displayLabel}</strong>
+                <br />
+                <span>{event.competition || 'Unknown competition'}</span>
+                <br />
+                <span>{formatEventDate(event.startTimeUtc)}</span>
+                <br />
+                <span>
+                  Location: {event.lat}, {event.lng}
+                </span>
+              </li>
             );
           })}
         </ul>
