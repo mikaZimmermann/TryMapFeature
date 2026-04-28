@@ -19,6 +19,18 @@ function parseBoolean(value) {
   return value === '1' || value.toLowerCase() === 'true';
 }
 
+function getUpcomingWeekDateRange() {
+  const today = new Date();
+  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+
+  return {
+    dateFrom: start.toISOString().slice(0, 10),
+    dateTo: end.toISOString().slice(0, 10)
+  };
+}
+
 function centerFromEvents(events) {
   if (!events.length) {
     return [37.7866, -122.4041];
@@ -85,9 +97,13 @@ export default function MapEventsClient() {
       return `${apiBaseUrl}/api/v1/events${baseParams.toString() ? `?${baseParams.toString()}` : ''}`;
     }
 
-    const todayParams = new URLSearchParams(queryString);
-    return `${apiBaseUrl}/api/v1/events/champions-league/today${
-      todayParams.toString() ? `?${todayParams.toString()}` : ''
+    const upcomingWeek = getUpcomingWeekDateRange();
+    const upcomingWeekParams = new URLSearchParams(queryString);
+    upcomingWeekParams.set('dateFrom', upcomingWeek.dateFrom);
+    upcomingWeekParams.set('dateTo', upcomingWeek.dateTo);
+
+    return `${apiBaseUrl}/api/v1/events${
+      upcomingWeekParams.toString() ? `?${upcomingWeekParams.toString()}` : ''
     }`;
   }, [queryString, searchParams]);
 
@@ -230,7 +246,7 @@ export default function MapEventsClient() {
 
         {providerStatus.hasRequiredCredentials ? (
           <div className="map-canvas-wrapper">
-            <div className="map-overlay">Germany today ({germanyCompetitionCode})</div>
+            <div className="map-overlay">Upcoming week events</div>
             <div ref={mapContainerRef} className="map-canvas" />
             <p className="map-note">Tile provider: {providerStatus.provider}</p>
             {!geoLoading && geoError && (
