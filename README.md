@@ -27,11 +27,21 @@ Use either `.env.example` at repo root or `frontend/.env.example` as your templa
 cp frontend/.env.example frontend/.env.local
 ```
 
-Required variables:
+Variables:
 
-- `NEXT_PUBLIC_MAP_PROVIDER` — `mapbox`, `google`, `leaflet`, etc.
-- `NEXT_PUBLIC_MAP_API_KEY` — provider key/token.
-- `NEXT_PUBLIC_MAP_TILE_URL` — optional tile URL for leaflet/openstreetmap.
+- `NEXT_PUBLIC_MAP_PROVIDER` — `mapbox` (default) or `osm`.
+- `NEXT_PUBLIC_MAP_API_KEY` — required for `mapbox`; optional for `osm`.
+- `NEXT_PUBLIC_MAP_STYLE_ID` — optional mapbox style (defaults to `mapbox/streets-v12`).
+- `NEXT_PUBLIC_MAP_TILE_URL` — optional tile URL override for custom/self-hosted tiles.
+
+
+## Tile provider guidance
+
+The v1 frontend is now committed to **Mapbox** as the primary tile provider.
+
+- **Attribution is required**: Mapbox and OpenStreetMap attribution must remain visible.
+- **Usage and billing limits apply**: monitor tile usage against your Mapbox plan.
+- **Fallback option**: set `NEXT_PUBLIC_MAP_PROVIDER=osm` only for low-traffic/testing scenarios if you need a no-key provider.
 
 ## Run locally
 
