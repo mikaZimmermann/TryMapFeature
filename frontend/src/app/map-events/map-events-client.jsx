@@ -41,6 +41,9 @@ export default function MapEventsClient() {
   const [syncMetadata, setSyncMetadata] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
+  const [geoError, setGeoError] = useState('');
+  const [geoLoading, setGeoLoading] = useState(true);
 
   const providerStatus = useMemo(() => getMapProviderStatus(mapConfig), []);
 
@@ -117,6 +120,40 @@ export default function MapEventsClient() {
   }, [endpoint]);
 
   const eventsToRender = events.length > 0 ? events : sampleEvents;
+  const eventCenter = useMemo(() => centerFromEvents(eventsToRender), [eventsToRender]);
+  const mapCenter = userLocation ?? eventCenter ?? [37.7866, -122.4041];
+
+  useEffect(() => {
+    if (!navigator?.geolocation?.getCurrentPosition) {
+      setGeoLoading(false);
+      setGeoError('Geolocation is unavailable in this browser.');
+      return;
+    }
+
+    setGeoLoading(true);
+    setGeoError('');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation([position.coords.latitude, position.coords.longitude]);
+        setGeoLoading(false);
+      },
+      (positionError) => {
+        setGeoLoading(false);
+        if (positionError?.code === positionError?.PERMISSION_DENIED) {
+          setGeoError('Location permission was denied. Showing non-personalized map results.');
+          return;
+        }
+
+        setGeoError('Unable to access your location. Showing non-personalized map results.');
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 300000
+      }
+    );
+  }, []);
 
   useEffect(() => {
     let leafletMap;
@@ -129,10 +166,8 @@ export default function MapEventsClient() {
       const leaflet = await import('leaflet');
       await import('leaflet/dist/leaflet.css');
 
-      const center = centerFromEvents(eventsToRender);
-
       leafletMap = leaflet.map(mapContainerRef.current, {
-        center,
+        center: mapCenter,
         zoom: 13,
         scrollWheelZoom: false
       });
@@ -170,7 +205,7 @@ export default function MapEventsClient() {
         leafletMap.remove();
       }
     };
-  }, [eventsToRender, providerStatus]);
+  }, [eventsToRender, mapCenter, providerStatus]);
 
   return (
     <BaseLayout>
@@ -184,6 +219,11 @@ export default function MapEventsClient() {
           <div className="map-canvas-wrapper">
             <div ref={mapContainerRef} className="map-canvas" />
             <p className="map-note">Tile provider: {providerStatus.provider}</p>
+            {!geoLoading && geoError && (
+              <p role="status" className="map-note">
+                {geoError}
+              </p>
+            )}
           </div>
         ) : (
           <div className="map-placeholder">
