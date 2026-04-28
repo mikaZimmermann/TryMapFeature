@@ -18,25 +18,49 @@ const normalizeRisk = ({ competitionCode, homeTeam, awayTeam }) => {
 const fallbackId = (prefix, homeTeam, awayTeam, startTimeUtc) =>
   `${prefix}-${homeTeam}-${awayTeam}-${startTimeUtc}`.toLowerCase().replace(/\s+/g, '-');
 
+const hashString = (value) => {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+
+  return Math.abs(hash);
+};
+
+const deriveApproxEuropeCoordinates = (seed) => {
+  const hash = hashString(seed);
+  const lat = 46 + ((hash % 800) / 100);
+  const lng = 2 + (((Math.floor(hash / 800) % 1400) / 100));
+
+  return {
+    lat: Number(lat.toFixed(4)),
+    lng: Number(lng.toFixed(4))
+  };
+};
+
 export const normalizeFootballDataEvent = (match) => {
   const homeTeam = match.homeTeam?.name ?? 'Unknown Home';
   const awayTeam = match.awayTeam?.name ?? 'Unknown Away';
   const startTimeUtc = match.utcDate ?? new Date().toISOString();
   const competitionCode = match.competition?.code ?? 'UNKNOWN';
   const risk = normalizeRisk({ competitionCode, homeTeam, awayTeam });
+  const approximateCoordinates = deriveApproxEuropeCoordinates(`${homeTeam}-${awayTeam}-${startTimeUtc}`);
 
   return {
     id: `football-data-${match.id ?? fallbackId('fd', homeTeam, awayTeam, startTimeUtc)}`,
     source: 'football-data',
     competition: match.competition?.name ?? 'Unknown Competition',
+    competitionCode,
     homeTeam,
     awayTeam,
     startTimeUtc,
     venueName: match.venue ?? 'Unknown Venue',
-    lat: null,
-    lng: null,
+    lat: competitionCode === 'CL' ? approximateCoordinates.lat : null,
+    lng: competitionCode === 'CL' ? approximateCoordinates.lng : null,
     city: null,
-    country: 'Germany',
+    country: match.area?.name ?? 'Europe',
+    locationPrecision: competitionCode === 'CL' ? 'approximate' : 'unknown',
     riskCategory: risk.riskCategory,
     riskScore: risk.riskScore
   };
@@ -58,6 +82,7 @@ export const normalizeOpenLigaEvent = (match) => {
     id: `open-liga-${match.matchID ?? fallbackId('ol', homeTeam, awayTeam, startTimeUtc)}`,
     source: 'open-liga',
     competition: groupName,
+    competitionCode: 'BL1',
     homeTeam,
     awayTeam,
     startTimeUtc,

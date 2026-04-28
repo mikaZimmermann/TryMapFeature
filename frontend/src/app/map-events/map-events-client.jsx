@@ -57,6 +57,24 @@ export default function MapEventsClient() {
     return nextQuery.toString();
   }, [searchParams]);
 
+  const endpoint = useMemo(() => {
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
+
+    if (dateFrom || dateTo) {
+      const baseParams = new URLSearchParams(queryString);
+      if (!baseParams.has('competitionCode')) {
+        baseParams.set('competitionCode', 'CL');
+      }
+      return `${apiBaseUrl}/api/v1/events${baseParams.toString() ? `?${baseParams.toString()}` : ''}`;
+    }
+
+    const todayParams = new URLSearchParams(queryString);
+    return `${apiBaseUrl}/api/v1/events/champions-league/today${
+      todayParams.toString() ? `?${todayParams.toString()}` : ''
+    }`;
+  }, [queryString, searchParams]);
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -65,7 +83,6 @@ export default function MapEventsClient() {
       setError('');
 
       try {
-        const endpoint = `${apiBaseUrl}/api/v1/events${queryString ? `?${queryString}` : ''}`;
         const response = await fetch(endpoint, {
           signal: controller.signal,
           cache: 'no-store'
@@ -97,7 +114,7 @@ export default function MapEventsClient() {
     loadEvents();
 
     return () => controller.abort();
-  }, [queryString]);
+  }, [endpoint]);
 
   const eventsToRender = events.length > 0 ? events : sampleEvents;
 
@@ -138,7 +155,11 @@ export default function MapEventsClient() {
         leaflet
           .marker([lat, lng])
           .addTo(leafletMap)
-          .bindPopup(event.title || 'Untitled event');
+          .bindPopup(
+            `${event.homeTeam || 'Home'} vs ${event.awayTeam || 'Away'}${
+              event.locationPrecision === 'approximate' ? ' (approx. location)' : ''
+            }`
+          );
       });
     }
 
@@ -194,10 +215,13 @@ export default function MapEventsClient() {
         <ul>
           {eventsToRender.map((event, index) => {
             const eventKey = event.id || `${event.title || 'event'}-${index}`;
+            const displayLabel = event.title
+              ? event.title
+              : `${event.homeTeam || 'Home'} vs ${event.awayTeam || 'Away'} • ${event.competition || 'Unknown competition'}${
+                  event.startTimeUtc ? ` • ${event.startTimeUtc}` : ''
+                }`;
             return (
-              <li key={eventKey}>
-                {event.title} ({event.lat}, {event.lng})
-              </li>
+              <li key={eventKey}>{displayLabel} ({event.lat}, {event.lng})</li>
             );
           })}
         </ul>
