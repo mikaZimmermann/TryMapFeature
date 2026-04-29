@@ -50,6 +50,7 @@ export default function MapEventsClient() {
     loadLeagueData();
     return () => controller.abort();
   }, [competition]);
+  const hasNoData = !isLoading && !error && standings.length === 0 && matches.length === 0;
 
   return (
     <BaseLayout>
@@ -79,7 +80,22 @@ export default function MapEventsClient() {
 
         <h2>League data</h2>
         {isLoading && <p>Loading standings and matches…</p>}
-        {!isLoading && error && <p role="alert">Could not fetch league data: {error}</p>}
+        {!isLoading && error && (
+          <>
+            <div role="alert" className="error-panel">
+              <strong>Could not fetch league data.</strong>
+              <p>{error}</p>
+            </div>
+            <div role="status" aria-live="polite" className="toast-error">
+              {error}
+            </div>
+          </>
+        )}
+        {hasNoData && (
+          <p role="status" className="no-data-state">
+            No standings or matches were returned by upstream providers.
+          </p>
+        )}
 
         {!isLoading && !error && (
           <>

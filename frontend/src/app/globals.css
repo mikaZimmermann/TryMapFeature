@@ -89,3 +89,37 @@ main {
   color: #475569;
   background: #f8fafc;
 }
+
+.error-panel {
+  margin: 1rem 0;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #7f1d1d;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.error-panel p {
+  margin: 0.5rem 0 0;
+}
+
+.toast-error {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  background: #7f1d1d;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.25);
+  max-width: 360px;
+  z-index: 1000;
+}
+
+.no-data-state {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #334155;
+  background: #f8fafc;
+}
