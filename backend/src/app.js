@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import crypto from 'crypto';
 
 import FootballDataProvider from './providers/footballDataProvider.js';
 import OpenLigaProvider from './providers/openLigaProvider.js';
@@ -31,6 +32,27 @@ const eventStore = new EventStore();
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  const headerRequestId = req.get('x-request-id');
+  const requestId = headerRequestId || crypto.randomUUID();
+  req.requestId = requestId;
+  res.set('x-request-id', requestId);
+  next();
+});
+
+const logUpstreamCall = ({ req, route, competition, query, statusCode, durationMs, errorCode, errorMessage }) => {
+  console.info(JSON.stringify({
+    event: 'upstream_call',
+    requestId: req.requestId,
+    route,
+    competition,
+    query,
+    statusCode,
+    durationMs,
+    ...(errorCode ? { errorCode } : {}),
+    ...(errorMessage ? { errorMessage } : {})
+  }));
+};
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
@@ -134,7 +156,21 @@ app.get('/api/football/matches', async (req, res) => {
   };
 
   try {
-    const payload = await primaryProvider.fetchMatches(sanitizedParams);
+    const payload = await primaryProvider.fetchMatches({
+      ...sanitizedParams,
+      logger: ({ statusCode, durationMs, errorCode, errorMessage }) => {
+        logUpstreamCall({
+          req,
+          route: '/api/football/matches',
+          competition,
+          query: sanitizedParams,
+          statusCode,
+          durationMs,
+          errorCode,
+          errorMessage
+        });
+      }
+    });
 
     return res.json({
       data: normalizeFootballMatches(payload)
@@ -160,9 +196,24 @@ app.get('/api/football/standings', async (req, res) => {
   }
 
   try {
-    const payload = await primaryProvider.fetchStandings({
+    const params = {
       competitionCode: competition,
       season
+    };
+    const payload = await primaryProvider.fetchStandings({
+      ...params,
+      logger: ({ statusCode, durationMs, errorCode, errorMessage }) => {
+        logUpstreamCall({
+          req,
+          route: '/api/football/standings',
+          competition,
+          query: params,
+          statusCode,
+          durationMs,
+          errorCode,
+          errorMessage
+        });
+      }
     });
 
     return res.json({

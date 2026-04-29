@@ -1,4 +1,12 @@
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+export class BackendApiError extends Error {
+  constructor(message, { status, code } = {}) {
+    super(message);
+    this.name = 'BackendApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
 
 function buildUrl(path, params = {}) {
   const query = new URLSearchParams();
@@ -14,7 +22,17 @@ function buildUrl(path, params = {}) {
 async function fetchJson(url, signal) {
   const response = await fetch(url, { signal, cache: 'no-store' });
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    let errorBody = null;
+    try {
+      errorBody = await response.json();
+    } catch {
+      errorBody = null;
+    }
+    const errorMessage = errorBody?.error?.message || 'Request failed';
+    throw new BackendApiError(`${errorMessage} (status ${response.status})`, {
+      status: response.status,
+      code: errorBody?.error?.code
+    });
   }
   return response.json();
 }

@@ -33,7 +33,10 @@ class UpstreamHttpClient {
     this.timeoutMs = timeoutMs;
   }
 
-  async getJson(url) {
+  async getJson(url, options = {}) {
+    const startedAt = Date.now();
+    const logger = typeof options.logger === 'function' ? options.logger : null;
+    let responseStatus = null;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -43,6 +46,7 @@ class UpstreamHttpClient {
         headers: this.defaultHeaders,
         signal: controller.signal
       });
+      responseStatus = response.status;
 
       if (!response.ok) {
         const body = await response.text();
@@ -54,8 +58,23 @@ class UpstreamHttpClient {
         });
       }
 
-      return response.json();
+      const payload = await response.json();
+      if (logger) {
+        logger({
+          statusCode: responseStatus,
+          durationMs: Date.now() - startedAt
+        });
+      }
+      return payload;
     } catch (error) {
+      if (logger) {
+        logger({
+          statusCode: responseStatus,
+          durationMs: Date.now() - startedAt,
+          errorCode: error?.code || 'UPSTREAM_CLIENT_ERROR',
+          errorMessage: error?.message || 'Unknown upstream error'
+        });
+      }
       if (error instanceof UpstreamHttpError) {
         throw error;
       }

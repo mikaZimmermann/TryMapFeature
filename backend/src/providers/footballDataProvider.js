@@ -22,7 +22,7 @@ class FootballDataProvider {
     });
   }
 
-  async fetchEvents({ dateFrom, dateTo, competitionCode } = {}) {
+  async fetchEvents({ dateFrom, dateTo, competitionCode, logger } = {}) {
     const endpoint = competitionCode
       ? `/competitions/${competitionCode}/matches`
       : '/matches';
@@ -36,22 +36,22 @@ class FootballDataProvider {
       url.searchParams.set('dateTo', dateTo);
     }
 
-    const payload = await this.client.getJson(url);
+    const payload = await this.client.getJson(url, { logger });
 
     return payload.matches ?? [];
   }
 
-  async fetchStandings({ competitionCode, season } = {}) {
+  async fetchStandings({ competitionCode, season, logger } = {}) {
     const url = new URL(`/competitions/${competitionCode}/standings`, this.baseUrl);
 
     if (season) {
       url.searchParams.set('season', season);
     }
 
-    return this.client.getJson(url);
+    return this.client.getJson(url, { logger });
   }
 
-  async fetchMatches({ competitionCode, season, matchday, dateFrom, dateTo, status } = {}) {
+  async fetchMatches({ competitionCode, season, matchday, dateFrom, dateTo, status, logger } = {}) {
     const url = new URL(`/competitions/${competitionCode}/matches`, this.baseUrl);
 
     if (season) {
@@ -74,7 +74,7 @@ class FootballDataProvider {
       url.searchParams.set('status', status);
     }
 
-    return this.client.getJson(url);
+    return this.client.getJson(url, { logger });
   }
 }
 
