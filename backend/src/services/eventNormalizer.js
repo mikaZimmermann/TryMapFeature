@@ -1,4 +1,4 @@
-import { getVenueLocation, getVenueLocationByHomeTeam } from './venueLocationLookup.js';
+import { debugVenueLookup, getVenueLocation, getVenueLocationByHomeTeam } from './venueLocationLookup.js';
 
 const HIGH_RISK_COMPETITIONS = new Set(['BL1', 'DFB']);
 
@@ -27,8 +27,11 @@ export const normalizeFootballDataEvent = (match) => {
   const competitionCode = match.competition?.code ?? 'UNKNOWN';
   const risk = normalizeRisk({ competitionCode, homeTeam, awayTeam });
   const venueNameFromApi = match.venue ?? null;
-  const venueLocation = getVenueLocationByHomeTeam(homeTeam) ?? getVenueLocation(venueNameFromApi);
+  const venueLocationByTeam = getVenueLocationByHomeTeam(homeTeam);
+  const venueLocationByVenue = getVenueLocation(venueNameFromApi);
+  const venueLocation = venueLocationByTeam ?? venueLocationByVenue;
   const venueName = venueLocation?.venueName ?? venueNameFromApi ?? 'Unknown Venue';
+  const enrichmentDebug = debugVenueLookup(homeTeam, venueNameFromApi);
 
   return {
     id: `football-data-${match.id ?? fallbackId('fd', homeTeam, awayTeam, startTimeUtc)}`,
@@ -45,7 +48,8 @@ export const normalizeFootballDataEvent = (match) => {
     country: venueLocation?.country ?? match.area?.name ?? 'Europe',
     locationPrecision: venueLocation ? 'exact' : 'unknown',
     riskCategory: risk.riskCategory,
-    riskScore: risk.riskScore
+    riskScore: risk.riskScore,
+    enrichmentDebug
   };
 };
 
@@ -75,7 +79,8 @@ export const normalizeOpenLigaEvent = (match) => {
     city: match.location?.locationCity ?? null,
     country: 'Germany',
     riskCategory: risk.riskCategory,
-    riskScore: risk.riskScore
+    riskScore: risk.riskScore,
+    enrichmentDebug
   };
 };
 

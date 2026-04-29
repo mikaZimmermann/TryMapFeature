@@ -17,59 +17,29 @@ const STADIUM_LOCATION_LOOKUP = {
   'merkur spiel-arena': { venueName: 'MERKUR SPIEL-ARENA', city: 'Dusseldorf', country: 'Germany', lat: 51.2612, lng: 6.7338 },
   'holstein-stadion': { venueName: 'Holstein-Stadion', city: 'Kiel', country: 'Germany', lat: 54.3337, lng: 10.1228 },
   'voith-arena': { venueName: 'Voith-Arena', city: 'Heidenheim', country: 'Germany', lat: 48.6765, lng: 10.1536 },
-  'millerntor-stadion': { venueName: 'Millerntor-Stadion', city: 'Hamburg', country: 'Germany', lat: 53.5547, lng: 9.9674 },
-  'veltins-arena': { venueName: 'VELTINS-Arena', city: 'Gelsenkirchen', country: 'Germany', lat: 51.5547, lng: 7.0672 },
-  'volksparkstadion': { venueName: 'Volksparkstadion', city: 'Hamburg', country: 'Germany', lat: 53.5872, lng: 9.8987 },
-  'max-morlock-stadion': { venueName: 'Max-Morlock-Stadion', city: 'Nuremberg', country: 'Germany', lat: 49.4269, lng: 11.1257 },
-  'merck-stadion am bollenfalltor': { venueName: 'Merck-Stadion am Bollenfalltor', city: 'Darmstadt', country: 'Germany', lat: 49.8599, lng: 8.6728 },
-  'fritz-walter-stadion': { venueName: 'Fritz-Walter-Stadion', city: 'Kaiserslautern', country: 'Germany', lat: 49.4362, lng: 7.7732 },
-  'bbbank wildpark': { venueName: 'BBBank Wildpark', city: 'Karlsruhe', country: 'Germany', lat: 49.0232, lng: 8.4219 },
-  'heinz von heiden-arena': { venueName: 'Heinz von Heiden-Arena', city: 'Hanover', country: 'Germany', lat: 52.3602, lng: 9.7316 },
-  'jahnstadion regensburg': { venueName: 'Jahnstadion Regensburg', city: 'Regensburg', country: 'Germany', lat: 48.9981, lng: 12.1221 },
-  'sportpark ronhof': { venueName: 'Sportpark Ronhof', city: 'Furth', country: 'Germany', lat: 49.4875, lng: 10.9928 },
-  'eintracht-stadion': { venueName: 'Eintracht-Stadion', city: 'Braunschweig', country: 'Germany', lat: 52.2912, lng: 10.5218 },
-  'ursapharm-arena': { venueName: 'URSAPHARM-Arena', city: 'Elversberg', country: 'Germany', lat: 49.357, lng: 7.1414 },
-  'donaustadion': { venueName: 'Donaustadion', city: 'Ulm', country: 'Germany', lat: 48.4028, lng: 9.9932 },
-  'olympiastadion berlin': { venueName: 'Olympiastadion Berlin', city: 'Berlin', country: 'Germany', lat: 52.5147, lng: 13.2394 },
-  'home deluxe arena': { venueName: 'Home Deluxe Arena', city: 'Paderborn', country: 'Germany', lat: 51.7188, lng: 8.7611 },
-  'avnet arena': { venueName: 'Avnet Arena', city: 'Magdeburg', country: 'Germany', lat: 52.1037, lng: 11.6327 }
+  'millerntor-stadion': { venueName: 'Millerntor-Stadion', city: 'Hamburg', country: 'Germany', lat: 53.5547, lng: 9.9674 }
 };
 
 const HOME_TEAM_TO_STADIUM = {
-  'fc bayern munchen': 'allianz arena',
+  'bayern munchen': 'allianz arena',
   'borussia dortmund': 'signal iduna park',
   'bayer 04 leverkusen': 'bayarena',
   'eintracht frankfurt': 'deutsche bank park',
   'vfb stuttgart': 'mhp arena',
-  'sv werder bremen': 'wohninvest weserstadion',
+  'werder bremen': 'wohninvest weserstadion',
   'rb leipzig': 'red bull arena',
   'vfl wolfsburg': 'volkswagen arena',
   'borussia monchengladbach': 'borussia-park',
-  'fc augsburg': 'wwk arena',
-  'vfl bochum 1848': 'vonovia ruhrstadion',
-  '1. fc union berlin': 'stadion an der alten forsterei',
-  'tsg 1899 hoffenheim': 'prezero arena',
+  'augsburg': 'wwk arena',
+  'vfl bochum': 'vonovia ruhrstadion',
+  'union berlin': 'stadion an der alten forsterei',
+  'hoffenheim': 'prezero arena',
   'sc freiburg': 'europa-park stadion',
-  '1. fc koln': 'rheinenergiestadion',
+  'koln': 'rheinenergiestadion',
   'fortuna dusseldorf': 'merkur spiel-arena',
   'holstein kiel': 'holstein-stadion',
-  '1. fc heidenheim 1846': 'voith-arena',
-  'fc st. pauli 1910': 'millerntor-stadion',
-  'fc schalke 04': 'veltins-arena',
-  'hamburger sv': 'volksparkstadion',
-  '1. fc nurnberg': 'max-morlock-stadion',
-  'sv darmstadt 98': 'merck-stadion am bollenfalltor',
-  '1. fc kaiserslautern': 'fritz-walter-stadion',
-  'karlsruher sc': 'bbbank wildpark',
-  'hannover 96': 'heinz von heiden-arena',
-  'ssv jahn regensburg': 'jahnstadion regensburg',
-  'spvgg greuther furth': 'sportpark ronhof',
-  'eintracht braunschweig': 'eintracht-stadion',
-  'sv 07 elversberg': 'ursapharm-arena',
-  'ssv ulm 1846': 'donaustadion',
-  'hertha bsc': 'olympiastadion berlin',
-  'sc paderborn 07': 'home deluxe arena',
-  '1. fc magdeburg': 'avnet arena'
+  'heidenheim': 'voith-arena',
+  'st pauli': 'millerntor-stadion'
 };
 
 const normalizeKey = (value = '') =>
@@ -77,11 +47,42 @@ const normalizeKey = (value = '') =>
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/\./g, ' ')
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\b(fc|sc|sv|vfb|vfl|tsg|spvgg|ssv|eintracht|borussia|club)\b/g, ' ')
+    .replace(/\b\d+\b/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
 export const getVenueLocation = (venueName) => STADIUM_LOCATION_LOOKUP[normalizeKey(venueName)] ?? null;
 
 export const getVenueLocationByHomeTeam = (homeTeamName) => {
-  const stadiumKey = HOME_TEAM_TO_STADIUM[normalizeKey(homeTeamName)];
-  return stadiumKey ? STADIUM_LOCATION_LOOKUP[stadiumKey] ?? null : null;
+  const normalizedTeamName = normalizeKey(homeTeamName);
+  const direct = HOME_TEAM_TO_STADIUM[normalizedTeamName];
+  if (direct) return STADIUM_LOCATION_LOOKUP[direct] ?? null;
+
+  const fuzzyMatch = Object.entries(HOME_TEAM_TO_STADIUM).find(([teamKey]) =>
+    normalizedTeamName.includes(teamKey) || teamKey.includes(normalizedTeamName)
+  );
+
+  if (!fuzzyMatch) return null;
+  return STADIUM_LOCATION_LOOKUP[fuzzyMatch[1]] ?? null;
+};
+
+export const debugVenueLookup = (homeTeamName, venueName) => {
+  const normalizedTeamName = normalizeKey(homeTeamName);
+  const normalizedVenueName = normalizeKey(venueName);
+  const mappedStadiumKey = HOME_TEAM_TO_STADIUM[normalizedTeamName] ?? null;
+  const byTeam = mappedStadiumKey ? STADIUM_LOCATION_LOOKUP[mappedStadiumKey] ?? null : null;
+  const byVenue = normalizedVenueName ? STADIUM_LOCATION_LOOKUP[normalizedVenueName] ?? null : null;
+
+  return {
+    homeTeamName,
+    venueName,
+    normalizedTeamName,
+    normalizedVenueName,
+    mappedStadiumKey,
+    resolvedByTeam: Boolean(byTeam),
+    resolvedByVenue: Boolean(byVenue)
+  };
 };

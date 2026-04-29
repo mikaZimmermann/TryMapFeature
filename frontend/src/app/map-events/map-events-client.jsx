@@ -282,6 +282,21 @@ export default function MapEventsClient() {
           </p>
         )}
 
+
+        <h3>Enrichment debug</h3>
+        {!isLoading && !error && (
+          <ul>
+            {events.map((event, index) => {
+              const debug = event.enrichmentDebug || {};
+              return (
+                <li key={`debug-${event.id || index}`}>
+                  {event.homeTeam || 'Unknown'} → normTeam="{debug.normalizedTeamName || ''}" | apiVenue="{debug.venueName || ''}" | normVenue="{debug.normalizedVenueName || ''}" | byTeam={String(debug.resolvedByTeam)} | byVenue={String(debug.resolvedByVenue)} | mappedKey="{debug.mappedStadiumKey || ''}"
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
         <ul>
           {eventsToRender.map((event, index) => {
             const eventKey = event.id || `${event.title || 'event'}-${index}`;
