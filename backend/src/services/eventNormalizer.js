@@ -1,3 +1,5 @@
+import { getVenueLocation } from './venueLocationLookup.js';
+
 const HIGH_RISK_COMPETITIONS = new Set(['BL1', 'DFB']);
 
 const normalizeRisk = ({ competitionCode, homeTeam, awayTeam }) => {
@@ -18,34 +20,14 @@ const normalizeRisk = ({ competitionCode, homeTeam, awayTeam }) => {
 const fallbackId = (prefix, homeTeam, awayTeam, startTimeUtc) =>
   `${prefix}-${homeTeam}-${awayTeam}-${startTimeUtc}`.toLowerCase().replace(/\s+/g, '-');
 
-const hashString = (value) => {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index);
-    hash |= 0;
-  }
-
-  return Math.abs(hash);
-};
-
-const deriveApproxEuropeCoordinates = (seed) => {
-  const hash = hashString(seed);
-  const lat = 46 + ((hash % 800) / 100);
-  const lng = 2 + (((Math.floor(hash / 800) % 1400) / 100));
-
-  return {
-    lat: Number(lat.toFixed(4)),
-    lng: Number(lng.toFixed(4))
-  };
-};
-
 export const normalizeFootballDataEvent = (match) => {
   const homeTeam = match.homeTeam?.name ?? 'Unknown Home';
   const awayTeam = match.awayTeam?.name ?? 'Unknown Away';
   const startTimeUtc = match.utcDate ?? new Date().toISOString();
   const competitionCode = match.competition?.code ?? 'UNKNOWN';
   const risk = normalizeRisk({ competitionCode, homeTeam, awayTeam });
-  const approximateCoordinates = deriveApproxEuropeCoordinates(`${homeTeam}-${awayTeam}-${startTimeUtc}`);
+  const venueName = match.venue ?? 'Unknown Venue';
+  const venueLocation = getVenueLocation(venueName);
 
   return {
     id: `football-data-${match.id ?? fallbackId('fd', homeTeam, awayTeam, startTimeUtc)}`,
@@ -55,12 +37,12 @@ export const normalizeFootballDataEvent = (match) => {
     homeTeam,
     awayTeam,
     startTimeUtc,
-    venueName: match.venue ?? 'Unknown Venue',
-    lat: competitionCode === 'CL' ? approximateCoordinates.lat : null,
-    lng: competitionCode === 'CL' ? approximateCoordinates.lng : null,
-    city: null,
-    country: match.area?.name ?? 'Europe',
-    locationPrecision: competitionCode === 'CL' ? 'approximate' : 'unknown',
+    venueName,
+    lat: venueLocation?.lat ?? null,
+    lng: venueLocation?.lng ?? null,
+    city: venueLocation?.city ?? null,
+    country: venueLocation?.country ?? match.area?.name ?? 'Europe',
+    locationPrecision: venueLocation ? 'exact' : 'unknown',
     riskCategory: risk.riskCategory,
     riskScore: risk.riskScore
   };
