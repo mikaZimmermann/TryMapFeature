@@ -282,19 +282,42 @@ export default function MapEventsClient() {
           </p>
         )}
 
-        <ul>
-          {eventsToRender.map((event, index) => {
-            const eventKey = event.id || `${event.title || 'event'}-${index}`;
-            const displayLabel = event.title
-              ? event.title
-              : `${event.homeTeam || 'Home'} vs ${event.awayTeam || 'Away'} • ${event.competition || 'Unknown competition'}${
-                  event.startTimeUtc ? ` • ${event.startTimeUtc}` : ''
-                }`;
-            return (
-              <li key={eventKey}>{displayLabel} ({event.lat}, {event.lng})</li>
-            );
-          })}
-        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Match</th>
+              <th>Competition</th>
+              <th>Location</th>
+              <th>Coordinates</th>
+              <th>Precision</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {eventsToRender.map((event, index) => {
+              const eventKey = event.id || `${event.title || 'event'}-${index}`;
+              const displayLabel = event.title
+                ? event.title
+                : `${event.homeTeam || 'Home'} vs ${event.awayTeam || 'Away'}`;
+              const locationLabel = [event.city, event.country].filter(Boolean).join(', ') || 'Unknown';
+              const coordinates =
+                Number.isFinite(Number(event.lat)) && Number.isFinite(Number(event.lng))
+                  ? `${Number(event.lat).toFixed(4)}, ${Number(event.lng).toFixed(4)}`
+                  : 'unresolved';
+
+              return (
+                <tr key={eventKey}>
+                  <td>{displayLabel}</td>
+                  <td>{event.competition || 'Unknown competition'}</td>
+                  <td>{locationLabel}</td>
+                  <td>{coordinates}</td>
+                  <td>{event.locationPrecision || 'unknown'}</td>
+                  <td>{event.locationSource || 'unknown'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </section>
     </BaseLayout>
   );
