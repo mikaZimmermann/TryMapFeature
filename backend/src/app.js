@@ -2,7 +2,6 @@ import cors from 'cors';
 import express from 'express';
 
 import FootballDataProvider from './providers/footballDataProvider.js';
-import OpenLigaProvider from './providers/openLigaProvider.js';
 import { normalizeEvents } from './services/eventNormalizer.js';
 import EventStore from './services/eventStore.js';
 
@@ -11,7 +10,6 @@ const syncIntervalMs = Number(process.env.EVENT_SYNC_INTERVAL_MS || 5 * 60 * 100
 const germanyCompetitionCode = process.env.FOOTBALL_GERMANY_COMPETITION_CODE || 'BL1';
 
 const primaryProvider = new FootballDataProvider();
-const fallbackProvider = new OpenLigaProvider();
 const eventStore = new EventStore();
 
 app.use(cors());
@@ -50,23 +48,9 @@ const runProviderIngestion = async (provider, params) => {
 const syncEvents = async (params = {}) => {
   try {
     return await runProviderIngestion(primaryProvider, params);
-  } catch (primaryError) {
-    markProviderError(primaryProvider.name, primaryError);
-
-    try {
-      const fallbackResult = await runProviderIngestion(fallbackProvider, params);
-
-      return {
-        ...fallbackResult,
-        fallbackUsed: true,
-        fallbackReason: primaryError.message
-      };
-    } catch (fallbackError) {
-      markProviderError(fallbackProvider.name, fallbackError);
-      throw new Error(
-        `All providers failed. Primary: ${primaryError.message}. Fallback: ${fallbackError.message}`
-      );
-    }
+  } catch (error) {
+    markProviderError(primaryProvider.name, error);
+    throw new Error(`football-data ingestion failed: ${error.message}`);
   }
 };
 

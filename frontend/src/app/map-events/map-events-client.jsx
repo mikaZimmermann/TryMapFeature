@@ -277,9 +277,36 @@ export default function MapEventsClient() {
         )}
         {!isLoading && !error && syncMetadata && (
           <p>
-            Sync: <strong>{String(syncMetadata.sync ?? 'unknown')}</strong>{' '}
+            Sync: <strong>{typeof syncMetadata.sync === 'object' ? JSON.stringify(syncMetadata.sync) : String(syncMetadata.sync ?? 'unknown')}</strong>{' '}
             {syncMetadata.lastIngestedAt ? `• Last ingested: ${syncMetadata.lastIngestedAt}` : ''}
           </p>
+        )}
+
+
+        <h3>Enrichment debug</h3>
+        {!isLoading && !error && (
+          <ul>
+            {events.map((event, index) => {
+              const debug = event.enrichmentDebug || {};
+              return (
+                <li key={`debug-${event.id || index}`}>
+                  {event.homeTeam || 'Unknown'} → normTeam="{debug.normalizedTeamName || ''}" | apiVenue="{debug.venueName || ''}" | normVenue="{debug.normalizedVenueName || ''}" | byTeam={String(debug.resolvedByTeam)} | byVenue={String(debug.resolvedByVenue)} | mappedKey="{debug.mappedStadiumKey || ''}"
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+
+        <h3>football-data raw response (per event)</h3>
+        {!isLoading && !error && (
+          <ul>
+            {events.map((event, index) => (
+              <li key={`raw-${event.id || index}`}>
+                <pre>{JSON.stringify(event.footballDataRaw || {}, null, 2)}</pre>
+              </li>
+            ))}
+          </ul>
         )}
 
         <ul>
