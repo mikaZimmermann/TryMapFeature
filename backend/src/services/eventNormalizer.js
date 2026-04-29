@@ -1,4 +1,4 @@
-import { getVenueLocation } from './venueLocationLookup.js';
+import { getVenueLocation, getVenueLocationByHomeTeam } from './venueLocationLookup.js';
 
 const HIGH_RISK_COMPETITIONS = new Set(['BL1', 'DFB']);
 
@@ -26,8 +26,9 @@ export const normalizeFootballDataEvent = (match) => {
   const startTimeUtc = match.utcDate ?? new Date().toISOString();
   const competitionCode = match.competition?.code ?? 'UNKNOWN';
   const risk = normalizeRisk({ competitionCode, homeTeam, awayTeam });
-  const venueName = match.venue ?? 'Unknown Venue';
-  const venueLocation = getVenueLocation(venueName);
+  const venueNameFromApi = match.venue ?? null;
+  const venueLocation = getVenueLocationByHomeTeam(homeTeam) ?? getVenueLocation(venueNameFromApi);
+  const venueName = venueLocation?.venueName ?? venueNameFromApi ?? 'Unknown Venue';
 
   return {
     id: `football-data-${match.id ?? fallbackId('fd', homeTeam, awayTeam, startTimeUtc)}`,
