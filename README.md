@@ -42,7 +42,9 @@ Variables:
 - `EVENT_SYNC_INTERVAL_MS` — optional cache/sync window in milliseconds (defaults to `300000`).
 - `FOOTBALL_GERMANY_COMPETITION_CODE` — optional football-data competition code for Germany endpoint (defaults to `BL1`).
 
-When deploying on Vercel, set both values in your project environment variables (`Settings -> Environment Variables`).
+When deploying on Vercel, set these backend values in `Settings -> Environment Variables` **using the exact variable names shown**.
+
+Important: the football-data API key variable name is exactly `FOOTBALL_DATA_API_KEY` (all uppercase). Do not use mixed-case variants such as `Football_Data_Api_Key` or `football_data_api_key`.
 
 
 ## Tile provider guidance
