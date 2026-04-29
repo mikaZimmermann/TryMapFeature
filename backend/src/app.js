@@ -3,6 +3,7 @@ import express from 'express';
 
 import FootballDataProvider from './providers/footballDataProvider.js';
 import OpenLigaProvider from './providers/openLigaProvider.js';
+import { UpstreamHttpError } from './services/upstreamHttpClient.js';
 import { normalizeEvents } from './services/eventNormalizer.js';
 import EventStore from './services/eventStore.js';
 
@@ -21,6 +22,7 @@ const supportedCompetitions = [
     emblem: 'https://crests.football-data.org/BL2.png'
   }
 ];
+const supportedStandingsCompetitions = new Set(['BL1', 'BL2']);
 
 const primaryProvider = new FootballDataProvider();
 const fallbackProvider = new OpenLigaProvider();
@@ -37,6 +39,80 @@ app.get('/api/football/competitions', (_req, res) => {
   res.json({
     data: supportedCompetitions
   });
+});
+
+const normalizeStandingsRows = (standingsPayload) => {
+  const standingsTables = Array.isArray(standingsPayload?.standings) ? standingsPayload.standings : [];
+  const preferredTable = standingsTables.find((entry) => entry.type === 'TOTAL') || standingsTables[0];
+  const rows = Array.isArray(preferredTable?.table) ? preferredTable.table : [];
+
+  return rows.map((entry) => ({
+    rank: entry.position,
+    team: {
+      id: entry.team?.id,
+      name: entry.team?.name,
+      shortName: entry.team?.shortName,
+      tla: entry.team?.tla,
+      crest: entry.team?.crest
+    },
+    played: entry.playedGames,
+    won: entry.won,
+    draw: entry.draw,
+    lost: entry.lost,
+    goalsFor: entry.goalsFor,
+    goalsAgainst: entry.goalsAgainst,
+    goalDifference: entry.goalDifference,
+    points: entry.points
+  }));
+};
+
+const buildUpstreamErrorEnvelope = (error) => {
+  const status = error instanceof UpstreamHttpError && Number.isInteger(error.status) ? error.status : 502;
+
+  return {
+    status,
+    body: {
+      error: {
+        code: error.code || 'UPSTREAM_ERROR',
+        message: error.message || 'Upstream request failed',
+        service: error.service || 'football-data',
+        upstreamStatus: error.status || null
+      }
+    }
+  };
+};
+
+app.get('/api/football/standings', async (req, res) => {
+  const competition = String(req.query.competition || '').toUpperCase();
+  const season = req.query.season;
+
+  if (!supportedStandingsCompetitions.has(competition)) {
+    return res.status(400).json({
+      error: {
+        code: 'INVALID_COMPETITION',
+        message: 'competition must be one of: BL1, BL2'
+      }
+    });
+  }
+
+  try {
+    const payload = await primaryProvider.fetchStandings({
+      competitionCode: competition,
+      season
+    });
+
+    return res.json({
+      data: {
+        competition: payload?.competition,
+        season: payload?.season,
+        standings: normalizeStandingsRows(payload)
+      }
+    });
+  } catch (error) {
+    const upstreamError = buildUpstreamErrorEnvelope(error);
+
+    return res.status(upstreamError.status).json(upstreamError.body);
+  }
 });
 
 const markProviderHealthy = (providerName) => {
