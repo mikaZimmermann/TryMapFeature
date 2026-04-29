@@ -1,4 +1,17 @@
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+
+const isLocalEnvironment = () => {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+};
+
+export const getApiBaseUrlConfigWarning = () => {
+  if (apiBaseUrl) return '';
+  return isLocalEnvironment()
+    ? ''
+    : 'NEXT_PUBLIC_API_BASE_URL is not set. Set it to your deployed backend origin (for example: https://<backend-domain>) so API requests can reach /api/football/* routes.';
+};
 export class BackendApiError extends Error {
   constructor(message, { status, code } = {}) {
     super(message);

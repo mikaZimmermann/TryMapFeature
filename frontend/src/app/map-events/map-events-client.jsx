@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import BaseLayout from 'components/BaseLayout';
 import { mapConfig } from 'lib/config';
 import { getMapProviderStatus } from 'lib/map-provider-adapter';
-import { getCompetitions, getMatches, getStandings } from 'lib/football-api-client';
+import { getApiBaseUrlConfigWarning, getCompetitions, getMatches, getStandings } from 'lib/football-api-client';
 
 const leagueOptions = ['BL1', 'BL2'];
 
@@ -18,6 +18,7 @@ export default function MapEventsClient() {
   const [error, setError] = useState('');
 
   const providerStatus = useMemo(() => getMapProviderStatus(mapConfig), []);
+  const apiBaseUrlConfigWarning = useMemo(() => getApiBaseUrlConfigWarning(), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -41,7 +42,12 @@ export default function MapEventsClient() {
         setCompetitions([]);
         setStandings([]);
         setMatches([]);
-        setError(requestError?.message || 'Unable to load league data.');
+        const isMatchesRouteNotFound = requestError?.status === 404;
+        setError(
+          isMatchesRouteNotFound
+            ? 'The backend returned HTTP 404 for /api/football/matches. Verify NEXT_PUBLIC_API_BASE_URL points to the deployed backend origin and that /api/football/matches is available.'
+            : (requestError?.message || 'Unable to load league data.')
+        );
       } finally {
         setIsLoading(false);
       }
@@ -79,6 +85,13 @@ export default function MapEventsClient() {
         )}
 
         <h2>League data</h2>
+        {apiBaseUrlConfigWarning && (
+          <div role="alert" className="error-panel">
+            <strong>Frontend API configuration warning.</strong>
+            <p>{apiBaseUrlConfigWarning}</p>
+          </div>
+        )}
+
         {isLoading && <p>Loading standings and matches…</p>}
         {!isLoading && error && (
           <>
