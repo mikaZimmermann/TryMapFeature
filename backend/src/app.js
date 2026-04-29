@@ -9,6 +9,18 @@ import EventStore from './services/eventStore.js';
 const app = express();
 const syncIntervalMs = Number(process.env.EVENT_SYNC_INTERVAL_MS || 5 * 60 * 1000);
 const germanyCompetitionCode = process.env.FOOTBALL_GERMANY_COMPETITION_CODE || 'BL1';
+const supportedCompetitions = [
+  {
+    code: 'BL1',
+    name: 'Bundesliga',
+    emblem: 'https://crests.football-data.org/BL1.png'
+  },
+  {
+    code: 'BL2',
+    name: '2. Bundesliga',
+    emblem: 'https://crests.football-data.org/BL2.png'
+  }
+];
 
 const primaryProvider = new FootballDataProvider();
 const fallbackProvider = new OpenLigaProvider();
@@ -19,6 +31,12 @@ app.use(express.json());
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get('/api/football/competitions', (_req, res) => {
+  res.json({
+    data: supportedCompetitions
+  });
 });
 
 const markProviderHealthy = (providerName) => {
