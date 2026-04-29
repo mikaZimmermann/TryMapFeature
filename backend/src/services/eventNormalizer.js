@@ -1,3 +1,5 @@
+import { enrichEventLocation } from './locationEnricher.js';
+
 const HIGH_RISK_COMPETITIONS = new Set(['BL1', 'DFB']);
 
 const normalizeRisk = ({ competitionCode, homeTeam, awayTeam }) => {
@@ -18,36 +20,14 @@ const normalizeRisk = ({ competitionCode, homeTeam, awayTeam }) => {
 const fallbackId = (prefix, homeTeam, awayTeam, startTimeUtc) =>
   `${prefix}-${homeTeam}-${awayTeam}-${startTimeUtc}`.toLowerCase().replace(/\s+/g, '-');
 
-const hashString = (value) => {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index);
-    hash |= 0;
-  }
-
-  return Math.abs(hash);
-};
-
-const deriveApproxEuropeCoordinates = (seed) => {
-  const hash = hashString(seed);
-  const lat = 46 + ((hash % 800) / 100);
-  const lng = 2 + (((Math.floor(hash / 800) % 1400) / 100));
-
-  return {
-    lat: Number(lat.toFixed(4)),
-    lng: Number(lng.toFixed(4))
-  };
-};
-
 export const normalizeFootballDataEvent = (match) => {
   const homeTeam = match.homeTeam?.name ?? 'Unknown Home';
   const awayTeam = match.awayTeam?.name ?? 'Unknown Away';
   const startTimeUtc = match.utcDate ?? new Date().toISOString();
   const competitionCode = match.competition?.code ?? 'UNKNOWN';
   const risk = normalizeRisk({ competitionCode, homeTeam, awayTeam });
-  const approximateCoordinates = deriveApproxEuropeCoordinates(`${homeTeam}-${awayTeam}-${startTimeUtc}`);
 
-  return {
+  const normalized = {
     id: `football-data-${match.id ?? fallbackId('fd', homeTeam, awayTeam, startTimeUtc)}`,
     source: 'football-data',
     competition: match.competition?.name ?? 'Unknown Competition',
@@ -56,14 +36,33 @@ export const normalizeFootballDataEvent = (match) => {
     awayTeam,
     startTimeUtc,
     venueName: match.venue ?? 'Unknown Venue',
-    lat: competitionCode === 'CL' ? approximateCoordinates.lat : null,
-    lng: competitionCode === 'CL' ? approximateCoordinates.lng : null,
+    lat: null,
+    lng: null,
     city: null,
-    country: match.area?.name ?? 'Europe',
-    locationPrecision: competitionCode === 'CL' ? 'approximate' : 'unknown',
+    country: null,
+    locationPrecision: 'unknown',
+    locationSource: 'unknown',
+    locationConfidence: 0,
+    rawLocationHints: {
+      venueName: match.venue ?? null,
+      areaName: match.area?.name ?? match.competition?.area?.name ?? null,
+      areaCode: match.area?.code ?? match.competition?.area?.code ?? null,
+      areaFlag: match.area?.flag ?? match.competition?.area?.flag ?? null,
+      competitionName: match.competition?.name ?? null,
+      competitionCode,
+      homeTeamName: homeTeam,
+      awayTeamName: awayTeam,
+      providerLat: match.venueCoordinates?.lat ?? match.location?.lat ?? null,
+      providerLng: match.venueCoordinates?.lng ?? match.location?.lng ?? null,
+      providerCity: match.city ?? match.location?.city ?? null,
+      providerCountry: match.country ?? match.location?.country ?? null,
+      matchId: match.id ?? null
+    },
     riskCategory: risk.riskCategory,
     riskScore: risk.riskScore
   };
+
+  return enrichEventLocation(normalized);
 };
 
 export const normalizeOpenLigaEvent = (match) => {
@@ -91,6 +90,9 @@ export const normalizeOpenLigaEvent = (match) => {
     lng,
     city: match.location?.locationCity ?? null,
     country: 'Germany',
+    locationPrecision: lat !== null && lng !== null ? 'exact' : 'city',
+    locationSource: lat !== null && lng !== null ? 'provider' : 'derived',
+    locationConfidence: lat !== null && lng !== null ? 1 : 0.6,
     riskCategory: risk.riskCategory,
     riskScore: risk.riskScore
   };
