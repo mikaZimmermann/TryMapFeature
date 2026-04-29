@@ -59,6 +59,7 @@ export default function MapEventsClient() {
           standingsResult.requestLog,
           matchesResult.requestLog,
           {
+            upstreamStandings: standingsResult.upstreamLog,
             upstream: matchesResult.upstreamLog,
             matchesReceived: matchesResult.data
           }

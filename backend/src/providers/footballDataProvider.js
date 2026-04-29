@@ -5,7 +5,7 @@ const DEFAULT_BASE_URL = 'https://api.football-data.org/v4';
 class FootballDataProvider {
   constructor({
     apiKey = process.env.FOOTBALL_DATA_API_KEY,
-    baseUrl = process.env.FOOTBALL_DATA_BASE_URL || DEFAULT_BASE_URL
+    baseUrl = DEFAULT_BASE_URL
   } = {}) {
     this.name = 'football-data';
     this.baseUrl = baseUrl;

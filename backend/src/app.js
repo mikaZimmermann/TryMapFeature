@@ -162,8 +162,9 @@ app.get('/api/football/matches', async (req, res) => {
     status: req.query.status ? String(req.query.status).trim().toUpperCase() : undefined
   };
 
+  let upstreamLog = null;
+
   try {
-    let upstreamLog = null;
     const payload = await primaryProvider.fetchMatches({
       ...sanitizedParams,
       logger: ({ method, requestUrl, requestHeaders, responseHeaders, statusCode, durationMs, errorCode, errorMessage }) => {
@@ -194,7 +195,12 @@ app.get('/api/football/matches', async (req, res) => {
   } catch (error) {
     const upstreamError = buildUpstreamErrorEnvelope(error);
 
-    return res.status(upstreamError.status).json(upstreamError.body);
+    return res.status(upstreamError.status).json({
+      ...upstreamError.body,
+      log: {
+        upstream: upstreamLog
+      }
+    });
   }
 });
 
@@ -211,6 +217,8 @@ app.get('/api/football/standings', async (req, res) => {
     });
   }
 
+  let upstreamLog = null;
+
   try {
     const params = {
       competitionCode: competition,
@@ -218,12 +226,16 @@ app.get('/api/football/standings', async (req, res) => {
     };
     const payload = await primaryProvider.fetchStandings({
       ...params,
-      logger: ({ statusCode, durationMs, errorCode, errorMessage }) => {
-        logUpstreamCall({
+      logger: ({ method, requestUrl, requestHeaders, responseHeaders, statusCode, durationMs, errorCode, errorMessage }) => {
+        upstreamLog = logUpstreamCall({
           req,
           route: '/api/football/standings',
           competition,
           query: params,
+          method,
+          requestUrl,
+          requestHeaders,
+          responseHeaders,
           statusCode,
           durationMs,
           errorCode,
@@ -237,12 +249,21 @@ app.get('/api/football/standings', async (req, res) => {
         competition: payload?.competition,
         season: payload?.season,
         standings: normalizeStandingsRows(payload)
+      },
+      log: {
+        upstream: upstreamLog,
+        receivedStandings: payload
       }
     });
   } catch (error) {
     const upstreamError = buildUpstreamErrorEnvelope(error);
 
-    return res.status(upstreamError.status).json(upstreamError.body);
+    return res.status(upstreamError.status).json({
+      ...upstreamError.body,
+      log: {
+        upstream: upstreamLog
+      }
+    });
   }
 });
 

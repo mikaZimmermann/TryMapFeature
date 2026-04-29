@@ -84,6 +84,7 @@ export async function getStandings({ competition, season, signal } = {}) {
   const { payload, requestLog } = await fetchJson(buildUrl('/api/football/standings', { competition, season }), signal);
   return {
     data: payload?.data || { standings: [] },
+    upstreamLog: payload?.log || null,
     requestLog
   };
 }
