@@ -50,6 +50,32 @@ class FootballDataProvider {
 
     return this.client.getJson(url);
   }
+
+  async fetchMatches({ competitionCode, season, matchday, dateFrom, dateTo, status } = {}) {
+    const url = new URL(`/competitions/${competitionCode}/matches`, this.baseUrl);
+
+    if (season) {
+      url.searchParams.set('season', season);
+    }
+
+    if (matchday) {
+      url.searchParams.set('matchday', matchday);
+    }
+
+    if (dateFrom) {
+      url.searchParams.set('dateFrom', dateFrom);
+    }
+
+    if (dateTo) {
+      url.searchParams.set('dateTo', dateTo);
+    }
+
+    if (status) {
+      url.searchParams.set('status', status);
+    }
+
+    return this.client.getJson(url);
+  }
 }
 
 export default FootballDataProvider;

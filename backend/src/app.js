@@ -23,6 +23,7 @@ const supportedCompetitions = [
   }
 ];
 const supportedStandingsCompetitions = new Set(['BL1', 'BL2']);
+const supportedMatchesCompetitions = new Set(['BL1', 'BL2']);
 
 const primaryProvider = new FootballDataProvider();
 const fallbackProvider = new OpenLigaProvider();
@@ -81,6 +82,69 @@ const buildUpstreamErrorEnvelope = (error) => {
     }
   };
 };
+
+const normalizeFootballMatches = (matchesPayload) => {
+  const matches = Array.isArray(matchesPayload?.matches) ? matchesPayload.matches : [];
+
+  return matches.map((match) => ({
+    id: match.id,
+    utcDate: match.utcDate,
+    status: match.status,
+    homeTeam: {
+      name: match.homeTeam?.name,
+      crest: match.homeTeam?.crest
+    },
+    awayTeam: {
+      name: match.awayTeam?.name,
+      crest: match.awayTeam?.crest
+    },
+    score: {
+      winner: match.score?.winner,
+      fullTime: {
+        home: match.score?.fullTime?.home,
+        away: match.score?.fullTime?.away
+      },
+      halfTime: {
+        home: match.score?.halfTime?.home,
+        away: match.score?.halfTime?.away
+      }
+    }
+  }));
+};
+
+app.get('/api/football/matches', async (req, res) => {
+  const competition = String(req.query.competition || '').toUpperCase();
+
+  if (!supportedMatchesCompetitions.has(competition)) {
+    return res.status(400).json({
+      error: {
+        code: 'INVALID_COMPETITION',
+        message: 'competition must be one of: BL1, BL2'
+      }
+    });
+  }
+
+  const sanitizedParams = {
+    competitionCode: competition,
+    season: req.query.season ? String(req.query.season).trim() : undefined,
+    matchday: req.query.matchday ? String(req.query.matchday).trim() : undefined,
+    dateFrom: req.query.dateFrom ? String(req.query.dateFrom).trim() : undefined,
+    dateTo: req.query.dateTo ? String(req.query.dateTo).trim() : undefined,
+    status: req.query.status ? String(req.query.status).trim().toUpperCase() : undefined
+  };
+
+  try {
+    const payload = await primaryProvider.fetchMatches(sanitizedParams);
+
+    return res.json({
+      data: normalizeFootballMatches(payload)
+    });
+  } catch (error) {
+    const upstreamError = buildUpstreamErrorEnvelope(error);
+
+    return res.status(upstreamError.status).json(upstreamError.body);
+  }
+});
 
 app.get('/api/football/standings', async (req, res) => {
   const competition = String(req.query.competition || '').toUpperCase();
