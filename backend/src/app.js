@@ -40,18 +40,25 @@ app.use((req, res, next) => {
   next();
 });
 
-const logUpstreamCall = ({ req, route, competition, query, statusCode, durationMs, errorCode, errorMessage }) => {
-  console.info(JSON.stringify({
+const logUpstreamCall = ({ req, route, competition, query, method, requestUrl, requestHeaders, responseHeaders, statusCode, durationMs, errorCode, errorMessage }) => {
+  const payload = {
     event: 'upstream_call',
     requestId: req.requestId,
     route,
     competition,
     query,
+    method,
+    requestUrl,
+    requestHeaders,
+    responseHeaders,
     statusCode,
     durationMs,
     ...(errorCode ? { errorCode } : {}),
     ...(errorMessage ? { errorMessage } : {})
-  }));
+  };
+
+  console.info(JSON.stringify(payload));
+  return payload;
 };
 
 app.get('/health', (_req, res) => {
@@ -156,14 +163,19 @@ app.get('/api/football/matches', async (req, res) => {
   };
 
   try {
+    let upstreamLog = null;
     const payload = await primaryProvider.fetchMatches({
       ...sanitizedParams,
-      logger: ({ statusCode, durationMs, errorCode, errorMessage }) => {
-        logUpstreamCall({
+      logger: ({ method, requestUrl, requestHeaders, responseHeaders, statusCode, durationMs, errorCode, errorMessage }) => {
+        upstreamLog = logUpstreamCall({
           req,
           route: '/api/football/matches',
           competition,
           query: sanitizedParams,
+          method,
+          requestUrl,
+          requestHeaders,
+          responseHeaders,
           statusCode,
           durationMs,
           errorCode,
@@ -173,7 +185,11 @@ app.get('/api/football/matches', async (req, res) => {
     });
 
     return res.json({
-      data: normalizeFootballMatches(payload)
+      data: normalizeFootballMatches(payload),
+      log: {
+        upstream: upstreamLog,
+        receivedMatches: Array.isArray(payload?.matches) ? payload.matches : []
+      }
     });
   } catch (error) {
     const upstreamError = buildUpstreamErrorEnvelope(error);

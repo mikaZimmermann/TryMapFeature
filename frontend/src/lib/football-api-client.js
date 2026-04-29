@@ -12,12 +12,14 @@ export const getApiBaseUrlConfigWarning = () => {
     ? ''
     : 'NEXT_PUBLIC_API_BASE_URL is not set. Set it to your deployed backend origin (for example: https://<backend-domain>) so API requests can reach /api/football/* routes.';
 };
+
 export class BackendApiError extends Error {
-  constructor(message, { status, code } = {}) {
+  constructor(message, { status, code, details } = {}) {
     super(message);
     this.name = 'BackendApiError';
     this.status = status;
     this.code = code;
+    this.details = details || null;
   }
 }
 
@@ -34,36 +36,66 @@ function buildUrl(path, params = {}) {
 
 async function fetchJson(url, signal) {
   const response = await fetch(url, { signal, cache: 'no-store' });
-  if (!response.ok) {
-    let errorBody = null;
-    try {
-      errorBody = await response.json();
-    } catch {
-      errorBody = null;
+  const responseText = await response.text();
+  let body = null;
+
+  try {
+    body = responseText ? JSON.parse(responseText) : null;
+  } catch {
+    body = null;
+  }
+
+  const requestLog = {
+    request: {
+      method: 'GET',
+      url
+    },
+    response: {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      body
     }
-    const errorMessage = errorBody?.error?.message || 'Request failed';
+  };
+
+  if (!response.ok) {
+    const errorMessage = body?.error?.message || 'Request failed';
     throw new BackendApiError(`${errorMessage} (status ${response.status})`, {
       status: response.status,
-      code: errorBody?.error?.code
+      code: body?.error?.code,
+      details: requestLog
     });
   }
-  return response.json();
+
+  return {
+    payload: body,
+    requestLog
+  };
 }
 
 export async function getCompetitions({ signal } = {}) {
-  const payload = await fetchJson(buildUrl('/api/football/competitions'), signal);
-  return Array.isArray(payload?.data) ? payload.data : [];
+  const { payload, requestLog } = await fetchJson(buildUrl('/api/football/competitions'), signal);
+  return {
+    data: Array.isArray(payload?.data) ? payload.data : [],
+    requestLog
+  };
 }
 
 export async function getStandings({ competition, season, signal } = {}) {
-  const payload = await fetchJson(buildUrl('/api/football/standings', { competition, season }), signal);
-  return payload?.data || { standings: [] };
+  const { payload, requestLog } = await fetchJson(buildUrl('/api/football/standings', { competition, season }), signal);
+  return {
+    data: payload?.data || { standings: [] },
+    requestLog
+  };
 }
 
 export async function getMatches({ competition, season, matchday, dateFrom, dateTo, status, signal } = {}) {
-  const payload = await fetchJson(
+  const { payload, requestLog } = await fetchJson(
     buildUrl('/api/football/matches', { competition, season, matchday, dateFrom, dateTo, status }),
     signal
   );
-  return Array.isArray(payload?.data) ? payload.data : [];
+  return {
+    data: Array.isArray(payload?.data) ? payload.data : [],
+    upstreamLog: payload?.log || null,
+    requestLog
+  };
 }

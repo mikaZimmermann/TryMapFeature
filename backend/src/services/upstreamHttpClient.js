@@ -61,7 +61,12 @@ class UpstreamHttpClient {
       const payload = await response.json();
       if (logger) {
         logger({
+          method: 'GET',
+          requestUrl: String(url),
+          requestHeaders: this.defaultHeaders,
+          query: Object.fromEntries(new URL(url).searchParams.entries()),
           statusCode: responseStatus,
+          responseHeaders: Object.fromEntries(response.headers.entries()),
           durationMs: Date.now() - startedAt
         });
       }
@@ -69,6 +74,10 @@ class UpstreamHttpClient {
     } catch (error) {
       if (logger) {
         logger({
+          method: 'GET',
+          requestUrl: String(url),
+          requestHeaders: this.defaultHeaders,
+          query: Object.fromEntries(new URL(url).searchParams.entries()),
           statusCode: responseStatus,
           durationMs: Date.now() - startedAt,
           errorCode: error?.code || 'UPSTREAM_CLIENT_ERROR',
