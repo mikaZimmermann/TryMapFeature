@@ -69,6 +69,14 @@ for (const location of CLUB_LOCATIONS) {
 }
 
 const toNumber = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === 'string' && value.trim() === '') {
+    return null;
+  }
+
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 };
@@ -77,7 +85,7 @@ const resolveProviderCoordinates = (rawLocationHints = {}) => {
   const lat = toNumber(rawLocationHints.providerLat);
   const lng = toNumber(rawLocationHints.providerLng);
 
-  if (lat === null || lng === null) {
+  if (lat === null || lng === null || (lat === 0 && lng === 0)) {
     return null;
   }
 
