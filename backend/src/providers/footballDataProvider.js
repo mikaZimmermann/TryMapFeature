@@ -1,14 +1,33 @@
 import { UpstreamHttpClient } from '../services/upstreamHttpClient.js';
 
 const DEFAULT_BASE_URL = 'https://api.football-data.org/v4';
+const API_VERSION_SEGMENT = '/v4';
+
+const normalizeFootballDataBaseUrl = (baseUrl = DEFAULT_BASE_URL) => {
+  const trimmedBaseUrl = String(baseUrl).trim().replace(/\/+$/, '');
+
+  if (trimmedBaseUrl.endsWith(API_VERSION_SEGMENT)) {
+    return trimmedBaseUrl;
+  }
+
+  return `${trimmedBaseUrl}${API_VERSION_SEGMENT}`;
+};
+
+const buildFootballDataUrl = (endpointPath, baseUrl = process.env.FOOTBALL_DATA_BASE_URL || DEFAULT_BASE_URL) => {
+  const normalizedBaseUrl = normalizeFootballDataBaseUrl(baseUrl);
+  const normalizedPath = endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`;
+
+  // Expected final shape: https://api.football-data.org/v4/...
+  return new URL(normalizedPath, normalizedBaseUrl);
+};
 
 class FootballDataProvider {
   constructor({
     apiKey = process.env.FOOTBALL_DATA_API_KEY,
-    baseUrl = DEFAULT_BASE_URL
+    baseUrl = process.env.FOOTBALL_DATA_BASE_URL || DEFAULT_BASE_URL
   } = {}) {
     this.name = 'football-data';
-    this.baseUrl = baseUrl;
+    this.baseUrl = normalizeFootballDataBaseUrl(baseUrl);
 
     if (!apiKey) {
       throw new Error('FOOTBALL_DATA_API_KEY is not configured');
@@ -26,7 +45,7 @@ class FootballDataProvider {
     const endpoint = competitionCode
       ? `/competitions/${competitionCode}/matches`
       : '/matches';
-    const url = new URL(endpoint, this.baseUrl);
+    const url = buildFootballDataUrl(endpoint, this.baseUrl);
 
     if (dateFrom) {
       url.searchParams.set('dateFrom', dateFrom);
@@ -42,7 +61,7 @@ class FootballDataProvider {
   }
 
   async fetchStandings({ competitionCode, season, logger } = {}) {
-    const url = new URL(`/competitions/${competitionCode}/standings`, this.baseUrl);
+    const url = buildFootballDataUrl(`/competitions/${competitionCode}/standings`, this.baseUrl);
 
     if (season) {
       url.searchParams.set('season', season);
@@ -52,7 +71,7 @@ class FootballDataProvider {
   }
 
   async fetchMatches({ competitionCode, season, matchday, dateFrom, dateTo, status, logger } = {}) {
-    const url = new URL(`/competitions/${competitionCode}/matches`, this.baseUrl);
+    const url = buildFootballDataUrl(`/competitions/${competitionCode}/matches`, this.baseUrl);
 
     if (season) {
       url.searchParams.set('season', season);
