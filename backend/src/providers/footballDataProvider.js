@@ -40,6 +40,16 @@ class FootballDataProvider {
 
     return payload.matches ?? [];
   }
+
+  async fetchStandings({ competitionCode, season } = {}) {
+    const url = new URL(`/competitions/${competitionCode}/standings`, this.baseUrl);
+
+    if (season) {
+      url.searchParams.set('season', season);
+    }
+
+    return this.client.getJson(url);
+  }
 }
 
 export default FootballDataProvider;
