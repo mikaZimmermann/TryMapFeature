@@ -1,17 +1,28 @@
+import { UpstreamHttpClient } from '../services/upstreamHttpClient.js';
+
 const DEFAULT_BASE_URL = 'https://api.football-data.org/v4';
 
 class FootballDataProvider {
-  constructor({ apiKey = process.env.FOOTBALL_DATA_API_KEY, baseUrl = DEFAULT_BASE_URL } = {}) {
+  constructor({
+    apiKey = process.env.FOOTBALL_DATA_API_KEY,
+    baseUrl = process.env.FOOTBALL_DATA_BASE_URL || DEFAULT_BASE_URL
+  } = {}) {
     this.name = 'football-data';
-    this.apiKey = apiKey;
     this.baseUrl = baseUrl;
-  }
 
-  async fetchEvents({ dateFrom, dateTo, competitionCode } = {}) {
-    if (!this.apiKey) {
+    if (!apiKey) {
       throw new Error('FOOTBALL_DATA_API_KEY is not configured');
     }
 
+    this.client = new UpstreamHttpClient({
+      service: this.name,
+      defaultHeaders: {
+        'X-Auth-Token': apiKey
+      }
+    });
+  }
+
+  async fetchEvents({ dateFrom, dateTo, competitionCode } = {}) {
     const endpoint = competitionCode
       ? `/competitions/${competitionCode}/matches`
       : '/matches';
@@ -25,18 +36,7 @@ class FootballDataProvider {
       url.searchParams.set('dateTo', dateTo);
     }
 
-    const response = await fetch(url, {
-      headers: {
-        'X-Auth-Token': this.apiKey
-      }
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`football-data request failed (${response.status}): ${body.slice(0, 200)}`);
-    }
-
-    const payload = await response.json();
+    const payload = await this.client.getJson(url);
 
     return payload.matches ?? [];
   }
