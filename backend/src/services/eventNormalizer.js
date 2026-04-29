@@ -79,8 +79,7 @@ export const normalizeOpenLigaEvent = (match) => {
     city: match.location?.locationCity ?? null,
     country: 'Germany',
     riskCategory: risk.riskCategory,
-    riskScore: risk.riskScore,
-    enrichmentDebug
+    riskScore: risk.riskScore
   };
 };
 
