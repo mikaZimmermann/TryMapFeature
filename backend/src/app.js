@@ -216,14 +216,19 @@ app.get('/api/football/standings', async (req, res) => {
       competitionCode: competition,
       season
     };
+    let upstreamLog = null;
     const payload = await primaryProvider.fetchStandings({
       ...params,
-      logger: ({ statusCode, durationMs, errorCode, errorMessage }) => {
-        logUpstreamCall({
+      logger: ({ method, requestUrl, requestHeaders, responseHeaders, statusCode, durationMs, errorCode, errorMessage }) => {
+        upstreamLog = logUpstreamCall({
           req,
           route: '/api/football/standings',
           competition,
           query: params,
+          method,
+          requestUrl,
+          requestHeaders,
+          responseHeaders,
           statusCode,
           durationMs,
           errorCode,
@@ -237,6 +242,10 @@ app.get('/api/football/standings', async (req, res) => {
         competition: payload?.competition,
         season: payload?.season,
         standings: normalizeStandingsRows(payload)
+      },
+      log: {
+        upstream: upstreamLog,
+        receivedStandings: payload
       }
     });
   } catch (error) {
