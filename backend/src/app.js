@@ -7,7 +7,10 @@ import EventStore from './services/eventStore.js';
 
 const app = express();
 const syncIntervalMs = Number(process.env.EVENT_SYNC_INTERVAL_MS || 5 * 60 * 1000);
-const germanyCompetitionCode = process.env.FOOTBALL_GERMANY_COMPETITION_CODE || 'BL1';
+const germanyCompetitionIds = (process.env.FOOTBALL_GERMANY_COMPETITION_IDS || '2002,2004')
+  .split(',')
+  .map((value) => Number(value.trim()))
+  .filter((value) => Number.isInteger(value));
 
 const primaryProvider = new FootballDataProvider();
 const eventStore = new EventStore();
@@ -54,7 +57,7 @@ const syncEvents = async (params = {}) => {
   }
 };
 
-const ensureEvents = async ({ force = false, dateFrom, dateTo, competitionCode } = {}) => {
+const ensureEvents = async ({ force = false, dateFrom, dateTo, competitionCode, competitionId } = {}) => {
   const lastIngestedAt = eventStore.getLastIngestedAt();
 
   if (!force && eventStore.hasEvents() && lastIngestedAt) {
@@ -67,7 +70,7 @@ const ensureEvents = async ({ force = false, dateFrom, dateTo, competitionCode }
     }
   }
 
-  return syncEvents({ dateFrom, dateTo, competitionCode });
+  return syncEvents({ dateFrom, dateTo, competitionCode, competitionId });
 };
 
 const filterEvents = ({ dateFrom, dateTo, competitionCode } = {}) =>
@@ -167,25 +170,30 @@ app.get('/api/v1/events/germany/today', async (req, res) => {
     const force = req.query.forceRefresh !== 'false';
     const todayUtc = new Date().toISOString().slice(0, 10);
 
-    const syncStatus = await ensureEvents({
-      force,
-      dateFrom: todayUtc,
-      dateTo: todayUtc,
-      competitionCode: germanyCompetitionCode
-    });
+    const syncResults = [];
+    for (const competitionId of germanyCompetitionIds) {
+      syncResults.push(
+        await ensureEvents({
+          force,
+          dateFrom: todayUtc,
+          dateTo: todayUtc,
+          competitionId
+        })
+      );
+    }
+
+    const germanyCodes = new Set(['bl1', 'bl2']);
 
     res.json({
-      data: filterEvents({
-        dateFrom: todayUtc,
-        dateTo: todayUtc,
-        competitionCode: germanyCompetitionCode
-      }),
-      sync: syncStatus,
+      data: filterEvents({ dateFrom: todayUtc, dateTo: todayUtc }).filter((event) =>
+        germanyCodes.has(String(event.competitionCode || '').toLowerCase())
+      ),
+      sync: syncResults,
       lastIngestedAt: eventStore.getLastIngestedAt(),
       filters: {
         dateFrom: todayUtc,
         dateTo: todayUtc,
-        competitionCode: germanyCompetitionCode
+        competitionIds: germanyCompetitionIds
       }
     });
   } catch (error) {

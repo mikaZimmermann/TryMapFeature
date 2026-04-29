@@ -26,7 +26,7 @@ export const normalizeFootballDataEvent = (match) => {
   const startTimeUtc = match.utcDate ?? new Date().toISOString();
   const competitionCode = match.competition?.code ?? 'UNKNOWN';
   const risk = normalizeRisk({ competitionCode, homeTeam, awayTeam });
-  const venueNameFromApi = match.venue ?? null;
+  const venueNameFromApi = match.venue ?? match.inferredVenue?.venue ?? null;
   const venueLocationByTeam = getVenueLocationByHomeTeam(homeTeam);
   const venueLocationByVenue = getVenueLocation(venueNameFromApi);
   const venueLocation = venueLocationByTeam ?? venueLocationByVenue;
@@ -35,6 +35,8 @@ export const normalizeFootballDataEvent = (match) => {
   const footballDataRaw = {
     matchId: match.id ?? null,
     venue: match.venue ?? null,
+    inferredVenue: match.inferredVenue?.venue ?? null,
+    inferredAddress: match.inferredVenue?.address ?? null,
     utcDate: match.utcDate ?? null,
     status: match.status ?? null,
     matchday: match.matchday ?? null,
